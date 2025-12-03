@@ -1,0 +1,43 @@
+{
+    "name": "Salesforce AI-driven CI/CD Dev Container",
+    "build": {
+        "dockerfile": "../docker/Dockerfile",
+        "context": ".."
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "salesforce.salesforcedx-vscode",
+                "salesforce.salesforcedx-vscode-apex",
+                "salesforce.salesforcedx-vscode-apex-debugger",
+                "salesforce.salesforcedx-vscode-apex-replay-debugger",
+                "salesforce.salesforcedx-vscode-core",
+                "salesforce.salesforcedx-vscode-expanded",
+                "salesforce.salesforcedx-vscode-lightning",
+                "salesforce.salesforcedx-vscode-lwc",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-playwright.playwright",
+                "orta.vscode-jest",
+                "redhat.vscode-yaml",
+                "GitHub.copilot",
+                "GitHub.vscode-pull-request-github"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "salesforcedx-vscode-core.push-or-deploy-on-save.enabled": false,
+                "editor.formatOnSave": true,
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
+                "[apex]": {
+                    "editor.defaultFormatter": "salesforce.salesforcedx-vscode-apex"
+                }
+            }
+        }
+    },
+    "forwardPorts": [
+        1717,
+        9229
+    ],
+    "postCreateCommand": "npm install",
+    "remoteUser": "root"
+}

@@ -1,0 +1,52 @@
+{
+    "printWidth": 120,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "bracketSpacing": true,
+    "arrowParens": "always",
+    "overrides": [
+        {
+            "files": "*.cls",
+            "options": {
+                "parser": "apex",
+                "printWidth": 100
+            }
+        },
+        {
+            "files": "*.trigger",
+            "options": {
+                "parser": "apex",
+                "printWidth": 100
+            }
+        },
+        {
+            "files": [
+                "*.html",
+                "*.xml"
+            ],
+            "options": {
+                "parser": "html",
+                "printWidth": 120
+            }
+        },
+        {
+            "files": "*.json",
+            "options": {
+                "printWidth": 120,
+                "tabWidth": 2
+            }
+        },
+        {
+            "files": [
+                "*.yml",
+                "*.yaml"
+            ],
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
+}
