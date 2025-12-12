@@ -139,6 +139,9 @@ jobs:
       - name: Install sfdx-git-delta
         run: echo "y" | sf plugins install sfdx-git-delta
       
+      - name: Install Salesforce Code Analyzer
+        run: sf plugins install @salesforce/sfdx-scanner
+      
       - name: Authenticate with Salesforce (JWT)
         run: |
           echo "${{ secrets.SERVER_KEY_BASE64 }}" | base64 -d > server.key
