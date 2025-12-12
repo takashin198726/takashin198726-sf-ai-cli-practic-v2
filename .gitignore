@@ -1,0 +1,52 @@
+# Salesforce
+.sfdx/
+.sf/
+.localdevserver/
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build/Test outputs
+coverage/
+test-results/
+playwright-report/
+hardis-report/
+
+# Secrets and certificates
+certificates/*.key
+certificates/*.crt
+certificates/*.pem
+certificates/*.base64
+server.key
+server.crt
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Validation ID (for Quick Deploy)
+.validation-id

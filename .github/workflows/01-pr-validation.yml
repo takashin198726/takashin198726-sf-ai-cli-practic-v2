@@ -102,11 +102,30 @@ jobs:
         with:
           fetch-depth: 0
       
+      - name: Cache Salesforce CLI
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/sf
+            ~/.npm
+            ~/.cache/sf
+          key: sf-cli-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            sf-cli-${{ runner.os }}-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+      
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
       
       - name: Install dependencies
         run: npm ci
