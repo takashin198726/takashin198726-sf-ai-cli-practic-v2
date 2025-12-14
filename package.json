@@ -20,6 +20,10 @@
         "ci:delta": "bash scripts/ci/generate-delta-package.sh",
         "deploy:quick": "bash scripts/ci/quick-deploy.sh deploy",
         "deploy:save-id": "bash scripts/ci/quick-deploy.sh save",
+        "parallel:setup": "bash scripts/parallel-dev/jj-setup.sh",
+        "parallel:start": "bash scripts/parallel-dev/multi-feature.sh start",
+        "parallel:list": "bash scripts/parallel-dev/multi-feature.sh list",
+        "parallel:sync": "bash scripts/parallel-dev/multi-feature.sh sync",
         "hardis:doc": "sf hardis:doc:project2markdown --output-dir docs/generated",
         "hardis:unused": "sf hardis:lint:unusedmetadatas"
     },
