@@ -1,0 +1,60 @@
+name: Authenticate with Salesforce
+description: Reusable action for Salesforce JWT authentication
+inputs:
+  server-key-base64:
+    description: 'Base64-encoded server key'
+    required: true
+  consumer-key:
+    description: 'Salesforce Consumer Key'
+    required: true
+  username:
+    description: 'Salesforce Username'
+    required: true
+  instance-url:
+    description: 'Salesforce Instance URL'
+    required: true
+  org-alias:
+    description: 'Alias for the authenticated org'
+    required: false
+    default: 'auth-org'
+
+runs:
+  using: composite
+  steps:
+    - name: Validate required secrets
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.server-key-base64 }}" ]; then
+          echo "❌ Error: server-key-base64 is not set"
+          exit 1
+        fi
+        if [ -z "${{ inputs.consumer-key }}" ]; then
+          echo "❌ Error: consumer-key is not set"
+          exit 1
+        fi
+        if [ -z "${{ inputs.username }}" ]; then
+          echo "❌ Error: username is not set"
+          exit 1
+        fi
+        if [ -z "${{ inputs.instance-url }}" ]; then
+          echo "❌ Error: instance-url is not set"
+          exit 1
+        fi
+        echo "✅ All required secrets are present"
+    
+    - name: Authenticate with Salesforce (JWT)
+      shell: bash
+      run: |
+        echo "${{ inputs.server-key-base64 }}" | base64 -d > server.key
+        sf org login jwt \
+          --client-id "${{ inputs.consumer-key }}" \
+          --jwt-key-file server.key \
+          --username "${{ inputs.username }}" \
+          --instance-url "${{ inputs.instance-url }}" \
+          --alias ${{ inputs.org-alias }} \
+          --set-default
+        rm server.key
+    
+    - name: Verify Salesforce authentication
+      shell: bash
+      run: sf org display --target-org ${{ inputs.org-alias }}
