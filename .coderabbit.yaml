@@ -1,0 +1,57 @@
+# CodeRabbit Configuration
+# See: https://docs.coderabbit.ai/guides/configure-coderabbit
+
+# Language for reviews (Japanese)
+language: ja
+
+# Review settings
+reviews:
+  # Skip file patterns
+  path_filters:
+    exclude:
+      - "**/*.md"
+      - "**/package-lock.json"
+      - "**/.jjconfig.toml"
+  
+  # Enable high-level summaries
+  high_level_summary: true
+  
+  # Enable detailed comments
+  review_status: true
+  
+  # Enable auto-reviews on push
+  auto_review:
+    enabled: true
+    base_branches:
+      - main
+      - develop
+  
+  # Enable security scanning
+  security: true
+  
+  # Enable performance checks
+  performance: true
+
+# Chat settings
+chat:
+  auto_reply: false
+
+# Tools configuration
+tools:
+  shellcheck:
+    enabled: true
+  yamllint:
+    enabled: true
+  actionlint:
+    enabled: true
+
+# Comment settings
+comments:
+  # Group related comments
+  collapse_walkthrough: false
+  
+  # Show file summaries
+  show_file_summaries: true
+  
+  # Summary format
+  summarize_release_notes: true

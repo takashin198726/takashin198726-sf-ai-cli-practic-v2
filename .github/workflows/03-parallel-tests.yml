@@ -30,17 +30,14 @@ jobs:
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
       
-      - name: Authenticate with Salesforce (JWT)
-        run: |
-          echo "${{ secrets.SERVER_KEY_BASE64 }}" | base64 -d > server.key
-          sf org login jwt \
-            --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
-            --jwt-key-file server.key \
-            --username "${{ secrets.SF_USERNAME }}" \
-            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
-            --alias test-org \
-            --set-default
-          rm server.key
+      - name: Authenticate with Salesforce
+        uses: ./.github/actions/salesforce-auth
+        with:
+          server-key-base64: ${{ secrets.SERVER_KEY_BASE64 }}
+          consumer-key: ${{ secrets.SF_CONSUMER_KEY }}
+          username: ${{ secrets.SF_USERNAME }}
+          instance-url: ${{ secrets.SF_INSTANCE_URL }}
+          org-alias: test-org
       
       - name: Run Alpha tests (A-M)
         id: alpha_tests
@@ -98,17 +95,14 @@ jobs:
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
       
-      - name: Authenticate with Salesforce (JWT)
-        run: |
-          echo "${{ secrets.SERVER_KEY_BASE64 }}" | base64 -d > server.key
-          sf org login jwt \
-            --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
-            --jwt-key-file server.key \
-            --username "${{ secrets.SF_USERNAME }}" \
-            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
-            --alias test-org \
-            --set-default
-          rm server.key
+      - name: Authenticate with Salesforce
+        uses: ./.github/actions/salesforce-auth
+        with:
+          server-key-base64: ${{ secrets.SERVER_KEY_BASE64 }}
+          consumer-key: ${{ secrets.SF_CONSUMER_KEY }}
+          username: ${{ secrets.SF_USERNAME }}
+          instance-url: ${{ secrets.SF_INSTANCE_URL }}
+          org-alias: test-org
       
       - name: Run N-Z tests (N-Z)
         id: nz_tests
@@ -191,7 +185,15 @@ jobs:
             // 集計
             const totalPassing = alphaResults.passing + nzResults.passing;
             const totalFailing = alphaResults.failing + nzResults.failing;
-            const avgCoverage = Math.round((alphaResults.coverage + nzResults.coverage) / 2);
+            
+            // 加重平均でカバレッジを計算（テスト数を考慮）
+            const alphaTotalTests = alphaResults.passing + alphaResults.failing;
+            const nzTotalTests = nzResults.passing + nzResults.failing;
+            const overallTotalTests = alphaTotalTests + nzTotalTests;
+            
+            const avgCoverage = overallTotalTests > 0
+              ? Math.round((alphaResults.coverage * alphaTotalTests + nzResults.coverage * nzTotalTests) / overallTotalTests)
+              : 0;
             
             // PRコメント作成
             let commentBody = `## 🧪 Parallel Test Execution Results\n\n`;
