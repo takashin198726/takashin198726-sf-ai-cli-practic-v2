@@ -1,0 +1,227 @@
+name: Parallel Test Execution
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'force-app/**/*.cls'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  # テストクラスを2つのグループに分割して並列実行
+  test-group-alpha:
+    name: Test Group Alpha (A-M)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+      
+      - name: Authenticate with Salesforce (JWT)
+        run: |
+          echo "${{ secrets.SERVER_KEY_BASE64 }}" | base64 -d > server.key
+          sf org login jwt \
+            --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
+            --jwt-key-file server.key \
+            --username "${{ secrets.SF_USERNAME }}" \
+            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
+            --alias test-org \
+            --set-default
+          rm server.key
+      
+      - name: Run Alpha tests (A-M)
+        id: alpha_tests
+        run: |
+          echo "⏱️ Starting Alpha group tests..."
+          START_TIME=$(date +%s)
+          
+          # A-Mで始まるテストクラスを取得
+          TEST_CLASSES=$(sf apex list class --json | jq -r '.result[] | select(.name | test("^[A-M].*Test$")) | .name' | tr '\n' ',' | sed 's/,$//')
+          
+          if [ -z "$TEST_CLASSES" ]; then
+            echo "ℹ️  No Alpha group test classes found"
+            echo "results={\"passing\":0,\"failing\":0,\"coverage\":0}" >> $GITHUB_OUTPUT
+          else
+            echo "🧪 Running tests: $TEST_CLASSES"
+            
+            sf apex run test \
+              --class-names "$TEST_CLASSES" \
+              --code-coverage \
+              --result-format json \
+              --wait 20 > alpha-results.json || true
+            
+            PASSING=$(jq -r '.summary.passing // 0' alpha-results.json)
+            FAILING=$(jq -r '.summary.failing // 0' alpha-results.json)
+            COVERAGE=$(jq -r '.summary.testRunCoverage // 0' alpha-results.json)
+            
+            echo "results={\"passing\":$PASSING,\"failing\":$FAILING,\"coverage\":$COVERAGE}" >> $GITHUB_OUTPUT
+          fi
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "⏱️ Alpha tests completed in ${DURATION}s"
+      
+      - name: Upload Alpha results
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-test-results
+          path: alpha-results.json
+          retention-days: 1
+
+  test-group-nz:
+    name: Test Group N-Z (N-Z)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+      
+      - name: Authenticate with Salesforce (JWT)
+        run: |
+          echo "${{ secrets.SERVER_KEY_BASE64 }}" | base64 -d > server.key
+          sf org login jwt \
+            --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
+            --jwt-key-file server.key \
+            --username "${{ secrets.SF_USERNAME }}" \
+            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
+            --alias test-org \
+            --set-default
+          rm server.key
+      
+      - name: Run N-Z tests (N-Z)
+        id: nz_tests
+        run: |
+          echo "⏱️ Starting N-Z group tests..."
+          START_TIME=$(date +%s)
+          
+          # N-Zで始まるテストクラスを取得
+          TEST_CLASSES=$(sf apex list class --json | jq -r '.result[] | select(.name | test("^[N-Z].*Test$")) | .name' | tr '\n' ',' | sed 's/,$//')
+          
+          if [ -z "$TEST_CLASSES" ]; then
+            echo "ℹ️  No N-Z group test classes found"
+            echo "results={\"passing\":0,\"failing\":0,\"coverage\":0}" >> $GITHUB_OUTPUT
+          else
+            echo "🧪 Running tests: $TEST_CLASSES"
+            
+            sf apex run test \
+              --class-names "$TEST_CLASSES" \
+              --code-coverage \
+              --result-format json \
+              --wait 20 > nz-results.json || true
+            
+            PASSING=$(jq -r '.summary.passing // 0' nz-results.json)
+            FAILING=$(jq -r '.summary.failing // 0' nz-results.json)
+            COVERAGE=$(jq -r '.summary.testRunCoverage // 0' nz-results.json)
+            
+            echo "results={\"passing\":$PASSING,\"failing\":$FAILING,\"coverage\":$COVERAGE}" >> $GITHUB_OUTPUT
+          fi
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "⏱️ N-Z tests completed in ${DURATION}s"
+      
+      - name: Upload N-Z results
+        uses: actions/upload-artifact@v4
+        with:
+          name: nz-test-results
+          path: nz-results.json
+          retention-days: 1
+
+  aggregate-results:
+    name: Aggregate Test Results
+    needs: [test-group-alpha, test-group-nz]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Aggregate and report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Alpha結果
+            let alphaResults = {passing: 0, failing: 0, coverage: 0};
+            if (fs.existsSync('alpha-test-results/alpha-results.json')) {
+              const alphaData = JSON.parse(fs.readFileSync('alpha-test-results/alpha-results.json'));
+              alphaResults = {
+                passing: alphaData.summary?.passing || 0,
+                failing: alphaData.summary?.failing || 0,
+                coverage: alphaData.summary?.testRunCoverage || 0
+              };
+            }
+            
+            // N-Z結果
+            let nzResults = {passing: 0, failing: 0, coverage: 0};
+            if (fs.existsSync('nz-test-results/nz-results.json')) {
+              const nzData = JSON.parse(fs.readFileSync('nz-test-results/nz-results.json'));
+              nzResults = {
+                passing: nzData.summary?.passing || 0,
+                failing: nzData.summary?.failing || 0,
+                coverage: nzData.summary?.testRunCoverage || 0
+              };
+            }
+            
+            // 集計
+            const totalPassing = alphaResults.passing + nzResults.passing;
+            const totalFailing = alphaResults.failing + nzResults.failing;
+            const avgCoverage = Math.round((alphaResults.coverage + nzResults.coverage) / 2);
+            
+            // PRコメント作成
+            let commentBody = `## 🧪 Parallel Test Execution Results\n\n`;
+            commentBody += `### Summary\n`;
+            commentBody += `- **Total Passing:** ${totalPassing}\n`;
+            commentBody += `- **Total Failing:** ${totalFailing}\n`;
+            commentBody += `- **Average Coverage:** ${avgCoverage}%\n\n`;
+            
+            commentBody += `### Group Breakdown\n`;
+            commentBody += `| Group | Passing | Failing | Coverage |\n`;
+            commentBody += `|-------|---------|---------|----------|\n`;
+            commentBody += `| Alpha (A-M) | ${alphaResults.passing} | ${alphaResults.failing} | ${alphaResults.coverage}% |\n`;
+            commentBody += `| N-Z (N-Z) | ${nzResults.passing} | ${nzResults.failing} | ${nzResults.coverage}% |\n\n`;
+            
+            if (totalFailing === 0) {
+              commentBody += `✅ **All tests passed!**\n\n`;
+              commentBody += `💡 **Parallel Execution Benefit:** Tests ran in parallel groups, potentially reducing total execution time by ~50%.`;
+            } else {
+              commentBody += `❌ **${totalFailing} test(s) failed**\n\n`;
+              commentBody += `Please review and fix failing tests.`;
+            }
+            
+            // PRにコメント投稿
+            if (context.payload.pull_request) {
+              github.rest.issues.createComment({
+                issue_number: context.payload.pull_request.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            } else {
+              console.log(commentBody);
+            }

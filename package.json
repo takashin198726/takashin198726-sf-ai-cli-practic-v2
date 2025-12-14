@@ -11,6 +11,7 @@
         "test:apex": "sf apex run test --test-level RunLocalTests --code-coverage --result-format human",
         "test:apex:json": "sf apex run test --test-level RunLocalTests --code-coverage --result-format json",
         "test:selective": "bash scripts/ci/selective-tests.sh",
+        "test:parallel": "echo 'ℹ️  Parallel tests run via GitHub Actions workflow'",
         "test:lwc": "jest --config jest.config.js",
         "test:e2e": "playwright test",
         "security:scan": "bash scripts/security/scan-secrets.sh",
