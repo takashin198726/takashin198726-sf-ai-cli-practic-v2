@@ -72,8 +72,13 @@ sync_and_merge() {
   echo "📥 Fetching latest from remote..."
   jj git fetch
   
-  # 2. mainブランチを更新
-  jj branch set main -r $(jj log -r 'main@origin' --no-graph -T 'commit_id' | head -1)
+  # 2. mainブランチを更新（ガード付き）
+  MAIN_COMMIT=$(jj log -r 'main@origin' --no-graph -T 'commit_id' | head -1)
+  if [ -z "$MAIN_COMMIT" ]; then
+    echo -e "${RED}❌ main@origin has no commits${NC}"
+    exit 1
+  fi
+  jj branch set main -r "$MAIN_COMMIT"
   
   # 3. 各並行ブランチをmainに対してリベース
   echo ""
