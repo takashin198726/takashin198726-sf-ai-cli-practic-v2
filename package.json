@@ -24,6 +24,8 @@
         "parallel:start": "bash scripts/parallel-dev/multi-feature.sh start",
         "parallel:list": "bash scripts/parallel-dev/multi-feature.sh list",
         "parallel:sync": "bash scripts/parallel-dev/multi-feature.sh sync",
+        "parallel:iterm": "bash scripts/parallel-dev/iterm-setup.sh",
+        "parallel:dashboard": "bash scripts/parallel-dev/dashboard.sh",
         "hardis:doc": "sf hardis:doc:project2markdown --output-dir docs/generated",
         "hardis:unused": "sf hardis:lint:unusedmetadatas"
     },
