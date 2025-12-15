@@ -1,0 +1,184 @@
+name: Parallel Feature Deployment
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Detect all parallel feature branches
+  detect-branches:
+    name: Detect Parallel Branches
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has-branches: ${{ steps.set-matrix.outputs.has-branches }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Jujutsu
+        run: |
+          # Install Jujutsu for Linux
+          if ! command -v jj &> /dev/null; then
+            echo "Installing Jujutsu..."
+            curl -L https://github.com/martinvonz/jj/releases/download/v0.23.0/jj-v0.23.0-x86_64-unknown-linux-musl.tar.gz -o jj.tar.gz
+            tar -xzf jj.tar.gz
+            sudo mv jj /usr/local/bin/
+            chmod +x /usr/local/bin/jj
+          fi
+          
+          # Initialize Jujutsu colocate mode
+          jj git init --colocate || true
+      
+      - name: Detect feature branches
+        id: set-matrix
+        run: |
+          # Get all bookmarks except main/develop
+          branches=$(jj bookmark list 2>/dev/null | grep -v -E '^(main|develop)$' | tr '\n' ',' | sed 's/,$//' || echo "")
+          
+          if [ -z "$branches" ]; then
+            echo "No feature bookmarks found"
+            echo "has-branches=false" >> $GITHUB_OUTPUT
+            echo "matrix={\"branch\":[]}" >> $GITHUB_OUTPUT
+          else
+            echo "Found branches: $branches"
+            echo "has-branches=true" >> $GITHUB_OUTPUT
+            
+            # Convert to JSON array
+            branch_array=$(echo "$branches" | jq -R -s -c 'split(",") | map(select(length > 0))')
+            echo "matrix={\"branch\":$branch_array}" >> $GITHUB_OUTPUT
+          fi
+
+  # Job 2: Deploy each branch in parallel
+  deploy-parallel:
+    name: Deploy ${{ matrix.branch }}
+    needs: detect-branches
+    if: needs.detect-branches.outputs.has-branches == 'true'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix: ${{ fromJSON(needs.detect-branches.outputs.matrix) }}
+      fail-fast: false  # Continue even if one branch fails
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup Salesforce CLI
+        run: |
+          npm install -g @salesforce/cli
+          sf version
+      
+      - name: Setup Jujutsu
+        run: |
+          # Install Jujutsu for Linux
+          if ! command -v jj &> /dev/null; then
+            curl -L https://github.com/martinvonz/jj/releases/download/v0.23.0/jj-v0.23.0-x86_64-unknown-linux-musl.tar.gz -o jj.tar.gz
+            tar -xzf jj.tar.gz
+            sudo mv jj /usr/local/bin/
+            chmod +x /usr/local/bin/jj
+          fi
+          jj git init --colocate || true
+      
+      - name: Install sfdx-hardis
+        run: |
+          npm install -g sfdx-hardis
+          sf plugins
+      
+      - name: Checkout branch
+        run: |
+          echo "Switching to branch: ${{ matrix.branch }}"
+          jj edit "${{ matrix.branch }}"
+          jj log -r @ -T 'commit: {commit_id}\nmessage: {description}\n'
+      
+      - name: Authenticate to Salesforce
+        env:
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SERVER_KEY_BASE64: ${{ secrets.SERVER_KEY_BASE64 }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+        run: |
+          echo "$SERVER_KEY_BASE64" | base64 -d > server.key
+          
+          sf org login jwt \
+            --client-id "$SF_CONSUMER_KEY" \
+            --jwt-key-file server.key \
+            --username "$SF_USERNAME" \
+            --instance-url "$SF_INSTANCE_URL" \
+            --alias deploy-org \
+            --set-default
+          
+          rm server.key
+      
+      - name: Deploy with sfdx-hardis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Deploying branch: ${{ matrix.branch }}"
+          
+          # Run sfdx-hardis deployment (check-only)
+          sf hardis:source:deploy \
+            --checkonly \
+            --checkcoverage \
+            --debug || {
+              echo "❌ Deployment failed for ${{ matrix.branch }}"
+              exit 1
+            }
+          
+          echo "✅ Deployment check passed for ${{ matrix.branch }}"
+      
+      - name: Comment on PR (on failure)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = '${{ matrix.branch }}';
+            const body = `## ❌ Deployment Failed: \`${branch}\`
+            
+            The deployment check for branch \`${branch}\` has failed.
+            
+            Please check the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.`;
+            
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+  # Job 3: Summary
+  summary:
+    name: Deployment Summary
+    needs: [detect-branches, deploy-parallel]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Post summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasBranches = '${{ needs.detect-branches.outputs.has-branches }}';
+            const deployResult = '${{ needs.deploy-parallel.result }}';
+            
+            let summary = '## 🎯 Parallel Feature Deployment Summary\n\n';
+            
+            if (hasBranches === 'false') {
+              summary += 'ℹ️  No parallel feature branches detected.\n';
+            } else {
+              summary += `**Deployment Result:** ${deployResult === 'success' ? '✅ All branches passed' : '❌ Some branches failed'}\n\n`;
+              summary += `Check individual job results above for details.`;
+            }
+            
+            core.summary.addRaw(summary).write();
