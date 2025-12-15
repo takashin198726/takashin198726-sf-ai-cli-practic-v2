@@ -28,6 +28,10 @@
         "parallel:resolve": "tsx scripts/parallel-dev/auto-resolve.ts",
         "parallel:resolve:interactive": "tsx scripts/parallel-dev/auto-resolve.ts --interactive",
         "parallel:resolve:auto": "tsx scripts/parallel-dev/auto-resolve.ts --auto",
+        "parallel:hardis:start": "bash scripts/parallel-dev/parallel-hardis-work.sh start",
+        "parallel:hardis:status": "bash scripts/parallel-dev/parallel-hardis-work.sh status",
+        "parallel:hardis:sync": "bash scripts/parallel-dev/parallel-hardis-work.sh sync",
+        "parallel:hardis:deploy": "bash scripts/parallel-dev/parallel-hardis-work.sh deploy",
         "hardis:doc": "sf hardis:doc:project2markdown --output-dir docs/generated",
         "hardis:unused": "sf hardis:lint:unusedmetadatas"
     },
