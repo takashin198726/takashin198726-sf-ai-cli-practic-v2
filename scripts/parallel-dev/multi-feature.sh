@@ -84,7 +84,7 @@ sync_and_merge() {
   echo ""
   echo "🔄 Rebasing parallel features onto main..."
   
-  for branch in $(jj branch list | grep -v "main\|develop" | awk '{print $1}'); do
+  for branch in $(jj branch list | grep -v -E '^(main|develop)$' | awk '{print $1}'); do
     echo -e "${YELLOW}  Rebasing: $branch${NC}"
     jj rebase -b "$branch" -d main
   done

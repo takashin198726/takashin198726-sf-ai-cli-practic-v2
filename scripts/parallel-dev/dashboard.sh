@@ -30,6 +30,7 @@ display_dashboard() {
   echo "─────────────────────────────────────────────────────────"
   
   if command -v jj &> /dev/null; then
+    # parallel alias excludes main and develop with exact matching
     jj log -r "parallel" --no-graph -T '
   🎯 ' -T 'branch_name.fill(20)' -T ' │ ' -T 'if(conflict, "⚠️  CONFLICT", "✅ Clean")' -T ' │ ' -T 'author.email().local().fill(15)' -T ' │ ' -T 'committer.timestamp().ago()' -T '
 ' 2>/dev/null | head -10 || echo "  No parallel features (run: npm run parallel:start)"
@@ -76,7 +77,7 @@ display_dashboard() {
   echo "─────────────────────────────────────────────────────────"
   
   if command -v jj &> /dev/null; then
-    TOTAL_FEATURES=$(jj branch list 2>/dev/null | grep -v "main\|develop" | wc -l | tr -d ' ')
+    TOTAL_FEATURES=$(jj branch list 2>/dev/null | grep -v -E '^(main|develop)$' | wc -l | tr -d ' ')
     echo "  Parallel features: $TOTAL_FEATURES"
   fi
   

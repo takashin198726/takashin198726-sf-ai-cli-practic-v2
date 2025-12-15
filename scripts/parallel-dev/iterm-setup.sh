@@ -15,15 +15,13 @@ fi
 
 echo "✅ iTerm2 detected"
 
-# 並行開発中の機能を取得
-FEATURES=$(jj branch list 2>/dev/null | grep -v "main\|develop" | head -5 || echo "")
+# 並行開発中の機能を取得（情報表示のみ）
+FEATURES=$(jj branch list 2>/dev/null | grep -v -E '^(main|develop)$' | head -5 || echo "")
 
 if [ -z "$FEATURES" ]; then
   echo "📋 No parallel features found. Creating example layout..."
-  LAYOUT_TYPE="example"
 else
   echo "📋 Found parallel features. Creating custom layout..."
-  LAYOUT_TYPE="custom"
   echo "$FEATURES"
 fi
 
