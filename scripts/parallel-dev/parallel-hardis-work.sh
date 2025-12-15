@@ -51,17 +51,18 @@ start_parallel_features() {
   if [ ${#features[@]} -eq 0 ]; then
     echo "❌ Error: No features specified"
     show_help
+    exit 1
   fi
   
   echo -e "${BLUE}🚀 Starting ${#features[@]} parallel features with sfdx-hardis integration${NC}"
   echo ""
   
-  # 1. Create Jujutsu branches
-  echo -e "${GREEN}📋 Step 1: Creating Jujutsu branches${NC}"
+  # 1. Create Jujutsu bookmarks
+  echo -e "${GREEN}📋 Step 1: Creating Jujutsu bookmarks${NC}"
   for feature in "${features[@]}"; do
-    echo "  Creating branch: $feature"
+    echo "  Creating bookmark: $feature"
     jj new main -m "feat: $feature" > /dev/null 2>&1
-    jj branch create "$feature" > /dev/null 2>&1
+    jj bookmark create "$feature" -r @ > /dev/null 2>&1
   done
   echo ""
   
@@ -74,7 +75,7 @@ start_parallel_features() {
     # Run sfdx-hardis work setup (if configured)
     if [ -f ".sfdx-hardis.yml" ]; then
       echo "    - Running hardis:work:new..."
-      sf hardis:work:new --auto-assign --no-prompt 2>/dev/null || {
+      sf hardis:work:new --debug 2>/dev/null || {
         echo "    ⚠️  hardis:work:new not configured, skipping"
       }
     else
@@ -105,8 +106,9 @@ show_status() {
   echo -e "${BLUE}📊 sfdx-hardis Status for All Branches${NC}"
   echo ""
   
-  # Get all feature branches (excluding main/develop)
-  local branches=$(jj branch list | grep -v -E '^(main|develop)$')
+  # Get all feature bookmarks (excluding main/develop)
+  local branches
+  branches=$(jj bookmark list | grep -v -E '^(main|develop)$')
   
   if [ -z "$branches" ]; then
     echo "ℹ️  No feature branches found"
@@ -148,7 +150,8 @@ sync_branches() {
   echo -e "${BLUE}🔄 Syncing All Branches with Main${NC}"
   echo ""
   
-  local branches=$(jj branch list | grep -v -E '^(main|develop)$')
+  local branches
+  branches=$(jj bookmark list | grep -v -E '^(main|develop)$')
   
   if [ -z "$branches" ]; then
     echo "ℹ️  No feature branches to sync"
@@ -179,7 +182,8 @@ deploy_all() {
   echo -e "${BLUE}🚀 Deploying All Branches (Check-Only)${NC}"
   echo ""
   
-  local branches=$(jj branch list | grep -v -E '^(main|develop)$')
+  local branches
+  branches=$(jj bookmark list | grep -v -E '^(main|develop)$')
   
   if [ -z "$branches" ]; then
     echo "ℹ️  No feature branches to deploy"
@@ -194,8 +198,8 @@ deploy_all() {
     jj edit "$branch" > /dev/null 2>&1
     
     # Deploy with sfdx-hardis
-    echo "Running: sf hardis:source:deploy --check-only"
-    if sf hardis:source:deploy --check true --debug 2>&1; then
+    echo "Running: sf hardis:source:deploy --checkonly"
+    if sf hardis:source:deploy --checkonly --debug 2>&1; then
       echo -e "${GREEN}✅ Deploy check passed${NC}"
     else
       echo -e "${YELLOW}⚠️  Deploy check failed${NC}"

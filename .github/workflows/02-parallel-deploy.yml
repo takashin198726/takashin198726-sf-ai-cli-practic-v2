@@ -22,10 +22,13 @@ jobs:
       
       - name: Setup Jujutsu
         run: |
-          # Install Jujutsu
+          # Install Jujutsu for Linux
           if ! command -v jj &> /dev/null; then
             echo "Installing Jujutsu..."
-            brew install jj
+            curl -L https://github.com/martinvonz/jj/releases/download/v0.23.0/jj-v0.23.0-x86_64-unknown-linux-musl.tar.gz -o jj.tar.gz
+            tar -xzf jj.tar.gz
+            sudo mv jj /usr/local/bin/
+            chmod +x /usr/local/bin/jj
           fi
           
           # Initialize Jujutsu colocate mode
@@ -34,11 +37,11 @@ jobs:
       - name: Detect feature branches
         id: set-matrix
         run: |
-          # Get all branches except main/develop
-          branches=$(jj branch list 2>/dev/null | grep -v -E '^(main|develop)$' | tr '\n' ',' | sed 's/,$//' || echo "")
+          # Get all bookmarks except main/develop
+          branches=$(jj bookmark list 2>/dev/null | grep -v -E '^(main|develop)$' | tr '\n' ',' | sed 's/,$//' || echo "")
           
           if [ -z "$branches" ]; then
-            echo "No feature branches found"
+            echo "No feature bookmarks found"
             echo "has-branches=false" >> $GITHUB_OUTPUT
             echo "matrix={\"branch\":[]}" >> $GITHUB_OUTPUT
           else
@@ -80,7 +83,13 @@ jobs:
       
       - name: Setup Jujutsu
         run: |
-          brew install jj
+          # Install Jujutsu for Linux
+          if ! command -v jj &> /dev/null; then
+            curl -L https://github.com/martinvonz/jj/releases/download/v0.23.0/jj-v0.23.0-x86_64-unknown-linux-musl.tar.gz -o jj.tar.gz
+            tar -xzf jj.tar.gz
+            sudo mv jj /usr/local/bin/
+            chmod +x /usr/local/bin/jj
+          fi
           jj git init --colocate || true
       
       - name: Install sfdx-hardis
@@ -121,8 +130,8 @@ jobs:
           
           # Run sfdx-hardis deployment (check-only)
           sf hardis:source:deploy \
-            --check true \
-            --check-coverage true \
+            --checkonly \
+            --checkcoverage \
             --debug || {
               echo "❌ Deployment failed for ${{ matrix.branch }}"
               exit 1
