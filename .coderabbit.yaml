@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
 # CodeRabbit Configuration
 # See: https://docs.coderabbit.ai/guides/configure-coderabbit
 
@@ -6,12 +8,11 @@ language: ja
 
 # Review settings
 reviews:
-  # Skip file patterns
+  # Path filters - must be array format
   path_filters:
-    exclude:
-      - "**/*.md"
-      - "**/package-lock.json"
-      - "**/.jjconfig.toml"
+    - "!**/*.md"
+    - "!**/package-lock.json"
+    - "!**/.jjconfig.toml"
   
   # Enable high-level summaries
   high_level_summary: true

@@ -54,7 +54,7 @@ switch_feature() {
     echo "Usage: $0 switch <feature-name>"
     echo ""
     echo "Available features:"
-    jj branch list | grep -v "main\|develop" || echo "  (none)"
+    jj branch list | grep -v -E '^(main|develop)$' || echo "  (none)"
     exit 1
   fi
   
@@ -84,7 +84,7 @@ sync_and_merge() {
   echo ""
   echo "🔄 Rebasing parallel features onto main..."
   
-  for branch in $(jj branch list | grep -v "main\|develop" | awk '{print $1}'); do
+  for branch in $(jj branch list | grep -v -E '^(main|develop)$' | awk '{print $1}'); do
     echo -e "${YELLOW}  Rebasing: $branch${NC}"
     jj rebase -b "$branch" -d main
   done
@@ -123,7 +123,7 @@ list_features() {
 '
   
   echo ""
-  echo -e "${YELLOW}Total features:${NC} $(jj branch list | grep -v "main\|develop" | wc -l)"
+  echo -e "${YELLOW}Total features:${NC} $(jj branch list | grep -v -E '^(main|develop)$' | wc -l)"
 }
 
 show_help() {
