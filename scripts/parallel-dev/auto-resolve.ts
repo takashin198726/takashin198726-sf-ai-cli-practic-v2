@@ -72,7 +72,7 @@ async function resolveConflicts(options: ResolveOptions): Promise<void> {
         console.log(`${"=".repeat(60)}\n`);
 
         // AIで分析
-        const analysis = await analyzeConflict(client, conflict, options.showReasoning);
+        const analysis = await analyzeConflict(client, conflict);
 
         // モード別処理
         switch (options.mode) {
@@ -128,8 +128,7 @@ function getConflictFiles(): ConflictFile[] {
 
 async function analyzeConflict(
     client: Anthropic,
-    conflict: ConflictFile,
-    showReasoning: boolean
+    conflict: ConflictFile
 ): Promise<ConflictAnalysis> {
     const fileExt = path.extname(conflict.path);
     const language = getLanguage(fileExt);
@@ -161,12 +160,17 @@ Respond in JSON format:
 
     try {
         const response = await client.messages.create({
-            model: "claude-3-5-sonnet-20241022",
+            model: "claude-3-7-sonnet-20250219",
             max_tokens: 8192,
             messages: [{ role: "user", content: prompt }],
         });
 
-        const jsonMatch = response.content[0].text.match(/\{[\s\S]*\}/);
+        const firstContent = response.content[0];
+        if (firstContent.type !== "text") {
+            throw new Error("Unexpected response type from AI");
+        }
+
+        const jsonMatch = firstContent.text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("Failed to parse AI response");
         }
@@ -224,7 +228,10 @@ async function handleAdvisorMode(analysis: ConflictAnalysis): Promise<void> {
         case "2":
             // クリップボードにコピー（環境依存）
             try {
-                execSync(`echo "${analysis.suggestion.replace(/"/g, '\\"')}" | pbcopy`);
+                execSync("pbcopy", {
+                    input: analysis.suggestion,
+                    encoding: "utf-8",
+                });
                 console.log("✅ Copied to clipboard");
             } catch {
                 console.log("⚠️  Clipboard not available. Suggestion:");
