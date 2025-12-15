@@ -267,22 +267,17 @@ jobs:
             echo "✅ PASSED: All tests passing"
           fi
       
-      - name: Generate delta package
-        run: bash scripts/ci/generate-delta-package.sh origin/${{ github.base_ref }}
-      
-      - name: Check-only deployment (delta)
-        if: hashFiles('changed-sources/package/package.xml') != ''
-        run: |
-          echo "🚀 Deploying delta package..."
-          
-          # Check if package has actual content (not just empty package)
-          if grep -q "<members>" changed-sources/package/package.xml; then
-            sf project deploy start \
-              --manifest changed-sources/package/package.xml \
-              --check-only \
-              --test-level RunLocalTests \
-              --wait 20 \
-              --verbose
-          else
-            echo "ℹ️  No metadata to deploy (empty package)"
-          fi
+      # =================================================================
+      # Deploy with sfdx-hardis (replaces delta + selective tests)
+      # =================================================================
+      - name: Validate deployment with sfdx-hardis
+        run: bash scripts/ci/sfdx-hardis-deploy.sh check-only
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SF_TARGET_ORG: ${{ secrets.SF_USERNAME }}
+        
+      # sfdx-hardis automatically:
+      # - Generates delta package (via SGD)
+      # - Runs smart Apex test selection
+      # - Posts PR feedback with results
+      # - Checks code coverage (75% threshold)
