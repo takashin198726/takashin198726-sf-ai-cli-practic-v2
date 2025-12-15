@@ -15,14 +15,18 @@ fi
 
 echo "✅ iTerm2 detected"
 
-# 並行開発中の機能を取得（情報表示のみ）
-FEATURES=$(jj branch list 2>/dev/null | grep -v -E '^(main|develop)$' | head -5 || echo "")
-
-if [ -z "$FEATURES" ]; then
-  echo "📋 No parallel features found. Creating example layout..."
-else
-  echo "📋 Found parallel features. Creating custom layout..."
-  echo "$FEATURES"
+# watchコマンドの確認（macOSにはデフォルトで入っていない）
+if ! command -v watch &>/dev/null; then
+  echo "⚠️  'watch' command not found"
+  echo "   The monitor pane requires 'watch' for real-time updates."
+  echo "   Install with: brew install watch"
+  echo "   Or use manual updates: jj log -r parallel --limit 10"
+  echo ""
+  read -p "Continue anyway? (y/n) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+  fi
 fi
 
 echo ""
