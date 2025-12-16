@@ -266,9 +266,10 @@ Suggestions for overall code quality improvement
 
 const args = process.argv.slice(2);
 
-const reportPath = args[0] || "megalinter-reports/megalinter-report.json";
-const outputPath = args[1] || "megalinter-reports/ai-analysis.md";
 const language = args.includes("--ja") ? "ja" : "en";
+const positionalArgs = args.filter(arg => !arg.startsWith("--"));
+const reportPath = positionalArgs[0] || "megalinter-reports/megalinter-report.json";
+const outputPath = positionalArgs[1] || "megalinter-reports/ai-analysis.md";
 
 analyzeLintReport({
     reportPath,
