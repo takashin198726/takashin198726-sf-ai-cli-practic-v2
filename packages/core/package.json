@@ -26,8 +26,8 @@
         "docs:translate": "tsx scripts/ai/translate-docs.ts"
     },
     "dependencies": {
-        "@anthropic-ai/sdk": "^0.62.0",
-        "sfdx-hardis": "^4.55.0"
+        "@anthropic-ai/sdk": "^0.71.2",
+        "sfdx-hardis": "^6.16.0"
     },
     "devDependencies": {
         "@types/node": "^22.10.2",

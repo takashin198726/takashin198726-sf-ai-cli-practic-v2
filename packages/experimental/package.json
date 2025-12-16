@@ -12,7 +12,7 @@
     },
     "dependencies": {
         "@sf-ai-cli/core": "workspace:*",
-        "@anthropic-ai/sdk": "^0.62.0"
+        "@anthropic-ai/sdk": "^0.71.2"
     },
     "devDependencies": {
         "@types/node": "^22.10.2",
