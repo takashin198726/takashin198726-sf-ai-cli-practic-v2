@@ -11,7 +11,7 @@
         "ai:autonomous": "echo 'Phase 7: Autonomous Development - coming soon'"
     },
     "dependencies": {
-        "@sf-ai-cli/core": "workspace:*",
+        "@sf-ai-cli/core": "file:../core",
         "@anthropic-ai/sdk": "^0.71.2"
     },
     "devDependencies": {
