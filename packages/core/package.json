@@ -1,0 +1,37 @@
+{
+    "name": "@sf-ai-cli/core",
+    "version": "1.0.0",
+    "description": "Phase 0-4 Stable Foundation - sfdx-hardis + Jujutsu + AI Quality",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "parallel:setup": "bash scripts/parallel-dev/jj-setup.sh",
+        "parallel:start": "bash scripts/parallel-dev/multi-feature.sh start",
+        "parallel:list": "bash scripts/parallel-dev/multi-feature.sh list",
+        "parallel:sync": "bash scripts/parallel-dev/multi-feature.sh sync",
+        "parallel:iterm": "bash scripts/parallel-dev/iterm-setup.sh",
+        "parallel:dashboard": "bash scripts/parallel-dev/dashboard.sh",
+        "parallel:resolve": "tsx scripts/parallel-dev/auto-resolve.ts",
+        "parallel:resolve:interactive": "tsx scripts/parallel-dev/auto-resolve.ts --interactive",
+        "parallel:resolve:auto": "tsx scripts/parallel-dev/auto-resolve.ts --auto",
+        "parallel:hardis:start": "bash scripts/parallel-dev/parallel-hardis-work.sh start",
+        "parallel:hardis:status": "bash scripts/parallel-dev/parallel-hardis-work.sh status",
+        "parallel:hardis:sync": "bash scripts/parallel-dev/parallel-hardis-work.sh sync",
+        "parallel:hardis:deploy": "bash scripts/parallel-dev/parallel-hardis-work.sh deploy",
+        "quality:lint": "sf hardis:project:lint",
+        "quality:analyze": "tsx scripts/ai/analyze-lint.ts",
+        "quality:analyze:ja": "tsx scripts/ai/analyze-lint.ts --ja",
+        "data:generate": "tsx scripts/ai/generate-sfdmu-config.ts",
+        "docs:ai": "sf hardis:doc:project2markdown --use-ai --output-dir docs/generated",
+        "docs:translate": "tsx scripts/ai/translate-docs.ts"
+    },
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.62.0",
+        "sfdx-hardis": "^4.55.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.2",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2"
+    }
+}
